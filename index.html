@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Course Mapper - Fairways</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f172a;
+      color: white;
+      height: 100vh;
+      overflow: hidden;
+    }
+    .main-layout {
+      display: flex;
+      height: 100vh;
+    }
+    .map-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    #map-container {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+    }
+    #map {
+      width: 150%;
+      height: 150%;
+      position: absolute;
+      top: -25%;
+      left: -25%;
+      transition: transform 0.5s ease;
+    }
+    .header {
+      background: linear-gradient(135deg, #1e3a5f, #0f172a);
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #334155;
+    }
+    .header h1 { font-size: 16px; font-weight: 600; color: #4ade80; }
+    .course-name-input {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid #475569;
+      border-radius: 6px;
+      padding: 5px 10px;
+      color: white;
+      font-size: 13px;
+      width: 160px;
+    }
+    .controls {
+      width: 240px;
+      min-width: 240px;
+      padding: 8px;
+      background: #1e293b;
+      overflow-y: auto;
+      border-left: 1px solid #334155;
+    }
+    .hole-nav {
+      display: grid;
+      grid-template-columns: repeat(9, 1fr);
+      gap: 3px;
+      margin-bottom: 8px;
+    }
+    .hole-btn {
+      min-width: 0;
+      height: 24px;
+      border: 1px solid #475569;
+      background: #334155;
+      color: white;
+      border-radius: 4px;
+      font-weight: 600;
+      font-size: 11px;
+      cursor: pointer;
+      padding: 0;
+    }
+    .hole-btn:hover { background: #475569; }
+    .hole-btn.active { background: #22c55e; border-color: #22c55e; }
+    .hole-btn.has-data { border-color: #3b82f6; }
+    .info-panel {
+      background: rgba(255,255,255,0.05);
+      border-radius: 8px;
+      padding: 8px;
+      margin-bottom: 8px;
+    }
+    .info-panel h3 {
+      color: #4ade80;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+    .info-item { background: rgba(0,0,0,0.2); padding: 4px 6px; border-radius: 4px; }
+    .info-label { color: #94a3b8; font-size: 9px; }
+    .info-value { color: white; font-weight: 600; font-size: 11px; }
+    .par-select, .stroke-index-select {
+      background: #334155;
+      border: 1px solid #475569;
+      border-radius: 4px;
+      padding: 3px 6px;
+      color: white;
+      font-size: 11px;
+      width: 100%;
+      margin-top: 2px;
+    }
+    .hazard-tools { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 6px; }
+    .hazard-btn {
+      padding: 4px 8px;
+      border: 1px solid #475569;
+      background: #334155;
+      color: white;
+      border-radius: 4px;
+      font-size: 10px;
+      cursor: pointer;
+    }
+    .hazard-btn:hover { background: #475569; }
+    .hazard-btn.active { border-color: #f59e0b; background: rgba(245, 158, 11, 0.2); }
+    .action-btn {
+      width: 100%;
+      padding: 6px 8px;
+      border: none;
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 4px;
+    }
+    .action-btn.primary { background: linear-gradient(135deg, #22c55e, #16a34a); color: white; }
+    .action-btn.secondary { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; }
+    .action-btn.warning { background: linear-gradient(135deg, #f59e0b, #d97706); color: black; }
+    .action-btn.danger { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; }
+    .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+    .status { text-align: center; padding: 4px; color: #fbbf24; font-size: 10px; min-height: 20px; }
+    .hazard-list { max-height: 60px; overflow-y: auto; margin-top: 4px; }
+    .hazard-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 3px 5px;
+      background: rgba(0,0,0,0.2);
+      border-radius: 3px;
+      margin-bottom: 2px;
+      font-size: 9px;
+    }
+    .delete-btn {
+      background: #ef4444;
+      border: none;
+      color: white;
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 9px;
+    }
+    .zoom-controls {
+      background: rgba(255,255,255,0.05);
+      border-radius: 8px;
+      padding: 6px;
+      margin-bottom: 8px;
+    }
+    .zoom-controls h3 {
+      color: #4ade80;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+    .zoom-btns {
+      display: flex;
+      gap: 3px;
+      flex-wrap: wrap;
+    }
+    .zoom-btn {
+      padding: 4px 8px;
+      border: 1px solid #475569;
+      background: #334155;
+      color: white;
+      border-radius: 4px;
+      font-size: 10px;
+      cursor: pointer;
+      flex: 1;
+      min-width: 36px;
+      text-align: center;
+    }
+    .zoom-btn:hover { background: #475569; }
+    .zoom-btn.active { background: #8b5cf6; border-color: #8b5cf6; }
+    .marker-tee {
+      background: #3b82f6; border: 3px solid white; border-radius: 8px;
+      width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+      font-weight: bold; font-size: 11px; box-shadow: 0 2px 8px rgba(0,0,0,0.4); cursor: grab;
+    }
+    .marker-green {
+      background: #fbbf24; border: 3px solid white; border-radius: 50%;
+      width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+      font-weight: bold; font-size: 11px; box-shadow: 0 2px 8px rgba(0,0,0,0.4); cursor: grab;
+    }
+    .marker-green-front { background: #4ade80; border: 3px solid white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.4); cursor: grab; }
+    .marker-green-back { background: #f87171; border: 3px solid white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.4); cursor: grab; }
+    .marker-bunker { background: #fde68a; border: 2px solid #f59e0b; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: grab; }
+    .marker-water { background: #3b82f6; border: 2px solid #1d4ed8; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: grab; }
+    .marker-trees { background: #22c55e; border: 2px solid #15803d; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: grab; }
+    .marker-ob { background: #ef4444; border: 2px solid #b91c1c; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; color: white; cursor: grab; }
+    .marker-dl { background: #f97316; border: 3px solid white; border-radius: 8px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.4); cursor: grab; }
+    .leaflet-container { background: #1e293b; }
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
+    .modal.show { display: flex; }
+    .modal-content { background: #1e293b; border-radius: 16px; padding: 20px; width: 100%; max-width: 500px; max-height: 80vh; overflow-y: auto; }
+    .modal-content h2 { margin-bottom: 16px; color: #4ade80; }
+    .modal-content textarea { width: 100%; height: 200px; background: #0f172a; border: 1px solid #475569; border-radius: 8px; color: white; padding: 12px; font-family: monospace; font-size: 12px; margin-bottom: 12px; }
+  </style>
+</head>
+<body>
+  <!-- How To Use Modal -->
+  <div class="modal" id="helpModal">
+    <div class="modal-content" style="max-width:560px;">
+      <h2>How To Use Course Mapper</h2>
+      <p style="color:#94a3b8;font-size:12px;margin-bottom:16px;">Create course files for EzyGolfer, Scrambler, MatchPlay Golf &amp; Stableford Golf.</p>
+
+      <div style="display:flex;flex-direction:column;gap:12px;">
+
+        <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:10px 12px;">
+          <div style="color:#4ade80;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">1 — Name Your Course</div>
+          <p style="font-size:12px;color:#cbd5e1;">Type your course name in the field at the top left. Use the exact name you want to appear in the app.</p>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:10px 12px;">
+          <div style="color:#4ade80;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">2 — Navigate to Your Course</div>
+          <p style="font-size:12px;color:#cbd5e1;">Tap <strong style="color:white;">My Location</strong> to jump the map to where you are (works on-course from a phone). Or pan and zoom the satellite map manually to find your course. Use zoom levels 17–18 to see individual holes clearly.</p>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:10px 12px;">
+          <div style="color:#4ade80;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">3 — Map Each Hole</div>
+          <p style="font-size:12px;color:#cbd5e1;margin-bottom:6px;">Use the hole numbers (1–18) at the top of the right panel to move between holes. For each hole:</p>
+          <ul style="font-size:12px;color:#cbd5e1;padding-left:16px;display:flex;flex-direction:column;gap:4px;">
+            <li>Drag the <strong style="color:#3b82f6;">blue TEE</strong> marker to the tee box on the satellite image</li>
+            <li>Drag the <strong style="color:#fbbf24;">yellow GREEN (C)</strong> marker to the centre of the green</li>
+            <li>Tap <strong style="color:#4ade80;">Set F</strong> then tap the front edge of the green — places the green <strong style="color:#4ade80;">Front</strong> marker; drag to adjust</li>
+            <li>Tap <strong style="color:#f87171;">Set B</strong> then tap the back edge of the green — places the green <strong style="color:#f87171;">Back</strong> marker; drag to adjust</li>
+            <li>Set the <strong style="color:white;">Par</strong> (3, 4, or 5) and <strong style="color:white;">Stroke Index</strong> (1–18) from your scorecard</li>
+            <li>Tap <strong style="color:white;">Orient</strong> to rotate the view so tee is at the bottom and green at the top — makes placement easier</li>
+            <li>Distance and bearing calculate automatically as you drag</li>
+          </ul>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:10px 12px;">
+          <div style="color:#4ade80;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">4 — Add Hazards (Optional)</div>
+          <p style="font-size:12px;color:#cbd5e1;">Tap <strong style="color:#f59e0b;">Bunker</strong>, <strong style="color:#3b82f6;">Water</strong>, <strong style="color:#22c55e;">Trees</strong>, or <strong style="color:#ef4444;">OB</strong> to activate that hazard type, then tap the map to place a marker. Drag markers to adjust. Tap the hazard button again to deactivate.</p>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:10px 12px;">
+          <div style="color:#f97316;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">5 — Mark Driver Landing (Optional)</div>
+          <p style="font-size:12px;color:#cbd5e1;">Tap <strong style="color:#f97316;">Set DL</strong> then tap the map where a good drive lands on this hole. The orange <strong style="color:#f97316;">DL</strong> marker is draggable once placed. The GPS screen in EzyGolfer will show your live distance to this point so you know exactly how far you need to carry.</p>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:10px 12px;">
+          <div style="color:#4ade80;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">6 — Save As You Go</div>
+          <p style="font-size:12px;color:#cbd5e1;">Tap <strong style="color:#22c55e;">Save</strong> regularly — your work is stored in the browser. Holes with both TEE and GREEN placed show a <strong style="color:#3b82f6;">blue border</strong> in the hole number grid.</p>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:10px 12px;">
+          <div style="color:#4ade80;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">7 — Export &amp; Import Into the App</div>
+          <p style="font-size:12px;color:#cbd5e1;">When all 18 holes are done, tap <strong style="color:#f59e0b;">Export</strong> → <strong style="color:white;">Download JSON File</strong>. This saves a <code style="background:rgba(0,0,0,0.3);padding:1px 4px;border-radius:3px;font-size:11px;">.json</code> file to your device.</p>
+          <p style="font-size:12px;color:#cbd5e1;margin-top:6px;">To load it into the app: <strong style="color:white;">Settings → Import Course Mapper</strong> and select the file.</p>
+          <p style="font-size:12px;color:#94a3b8;margin-top:6px;">Compatible with: EzyGolfer · Scrambler · MatchPlay Golf · Stableford Golf</p>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:10px 12px;">
+          <div style="color:#4ade80;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Tips</div>
+          <ul style="font-size:12px;color:#cbd5e1;padding-left:16px;display:flex;flex-direction:column;gap:4px;">
+            <li>Best done on-course with the phone — use <strong style="color:white;">My Location</strong> to stay oriented</li>
+            <li>You can do it from a desktop using Google Maps or the course website to identify hole positions</li>
+            <li>Par and Stroke Index come straight from your paper scorecard</li>
+            <li>Use <strong style="color:white;">Import</strong> to reload a previously saved file and continue editing</li>
+            <li>Tap <strong style="color:#ef4444;">Clear</strong> to reset a single hole if you need to start it over</li>
+          </ul>
+        </div>
+
+      </div>
+
+      <button class="action-btn primary" style="margin-top:16px;" onclick="closeModal('helpModal')">Got It</button>
+    </div>
+  </div>
+
+  <div class="main-layout">
+    <div class="map-section">
+      <div class="header">
+        <h1>Course Mapper</h1>
+        <input type="text" class="course-name-input" id="courseName" placeholder="Course Name" value="Lombok Kosaido">
+        <button onclick="document.getElementById('helpModal').classList.add('show')" style="background:rgba(255,255,255,0.1);border:1px solid #475569;border-radius:6px;color:#4ade80;font-size:13px;font-weight:700;width:28px;height:28px;cursor:pointer;flex-shrink:0;">?</button>
+      </div>
+      <div id="map-container">
+        <div id="map"></div>
+      </div>
+    </div>
+    <div class="controls">
+      <div class="hole-nav" id="holeNav"></div>
+      <div class="zoom-controls">
+        <h3>Zoom Level</h3>
+        <div class="zoom-btns">
+          <button class="zoom-btn" onclick="setZoom(16)">16</button>
+          <button class="zoom-btn" onclick="setZoom(16.5)">16.5</button>
+          <button class="zoom-btn" onclick="setZoom(17)">17</button>
+          <button class="zoom-btn" onclick="setZoom(18)">18</button>
+          <button class="zoom-btn" onclick="setZoom(18.5)">18.5</button>
+        </div>
+      </div>
+      <div class="info-panel">
+        <h3>Hole <span id="currentHoleNum">1</span></h3>
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">Par</div>
+            <select class="par-select" id="parSelect" onchange="updateHolePar()">
+              <option value="3">3</option>
+              <option value="4" selected>4</option>
+              <option value="5">5</option>
+            </select>
+          </div>
+          <div class="info-item">
+            <div class="info-label">SI</div>
+            <select class="stroke-index-select" id="strokeIndexSelect" onchange="updateHoleStrokeIndex()"></select>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Distance</div>
+            <div class="info-value" id="holeDistance">-- m</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Bearing</div>
+            <div class="info-value" id="holeBearing">--</div>
+          </div>
+        </div>
+      </div>
+      <div class="info-panel">
+        <h3>Green F / C / B</h3>
+        <div style="display:flex;align-items:center;gap:4px;margin-bottom:5px;">
+          <span style="color:#4ade80;font-size:10px;font-weight:bold;width:28px;">FRONT</span>
+          <span id="greenFrontCoords" style="color:#94a3b8;font-size:9px;flex:1;">Not set</span>
+          <button id="greenFrontBtn" style="background:#4ade80;color:#0f172a;border:none;border-radius:3px;padding:2px 6px;font-size:9px;font-weight:bold;cursor:pointer;" onclick="toggleGreenFrontMode()">Set</button>
+          <button style="background:#475569;color:white;border:none;border-radius:3px;padding:2px 6px;font-size:9px;cursor:pointer;" onclick="clearGreenFront()">✕</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;">
+          <span style="color:#f87171;font-size:10px;font-weight:bold;width:28px;">BACK</span>
+          <span id="greenBackCoords" style="color:#94a3b8;font-size:9px;flex:1;">Not set</span>
+          <button id="greenBackBtn" style="background:#f87171;color:white;border:none;border-radius:3px;padding:2px 6px;font-size:9px;font-weight:bold;cursor:pointer;" onclick="toggleGreenBackMode()">Set</button>
+          <button style="background:#475569;color:white;border:none;border-radius:3px;padding:2px 6px;font-size:9px;cursor:pointer;" onclick="clearGreenBack()">✕</button>
+        </div>
+      </div>
+      <div class="info-panel">
+        <h3>Hazards (<span id="hazardCount">0</span>)</h3>
+        <div class="hazard-tools" id="hazardTools"></div>
+        <div class="hazard-list" id="hazardList"></div>
+      </div>
+      <div class="info-panel">
+        <h3>Driver Landing</h3>
+        <div id="dlCoords" style="color:#94a3b8;font-size:10px;margin-bottom:6px;">Not set</div>
+        <div class="btn-row">
+          <button class="action-btn" id="dlBtn" style="background:#f97316;color:white;" onclick="toggleDLMode()">Set DL</button>
+          <button class="action-btn danger" onclick="clearDL()">Clear DL</button>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="action-btn secondary" onclick="prevHole()">Prev</button>
+        <button class="action-btn secondary" onclick="nextHole()">Next</button>
+      </div>
+      <div class="btn-row">
+        <button class="action-btn primary" onclick="orientHole()">Orient</button>
+        <button class="action-btn" style="background:#475569;color:white;" onclick="resetRotation()">Reset</button>
+      </div>
+      <div class="btn-row">
+        <button class="action-btn warning" onclick="showExportModal()">Export</button>
+        <button class="action-btn secondary" onclick="showImportModal()">Import</button>
+      </div>
+      <div class="btn-row">
+        <button class="action-btn primary" onclick="saveCourse()">Save</button>
+        <button class="action-btn danger" onclick="clearHole()">Clear</button>
+      </div>
+      <button class="action-btn" style="background:#8b5cf6;color:white;" onclick="findMyLocation()">My Location</button>
+      <div class="status" id="status">Drag TEE/GREEN markers</div>
+    </div>
+  </div>
+  <div class="modal" id="exportModal">
+    <div class="modal-content">
+      <h2>Export Course Data</h2>
+      <textarea id="jsonOutput" readonly></textarea>
+      <button class="action-btn primary" onclick="copyJson()">Copy to Clipboard</button>
+      <button class="action-btn secondary" onclick="downloadJson()">Download JSON File</button>
+      <button class="action-btn" style="background:#475569;color:white;" onclick="closeModal('exportModal')">Close</button>
+    </div>
+  </div>
+  <div class="modal" id="importModal">
+    <div class="modal-content">
+      <h2>Import Course Data</h2>
+      <p style="color:#94a3b8;font-size:13px;margin-bottom:12px;">Paste previously exported JSON or upload a file:</p>
+      <textarea id="jsonInput" placeholder="Paste JSON here..."></textarea>
+      <input type="file" id="fileInput" accept=".json" style="display:none;" onchange="handleFileSelect(event)">
+      <button class="action-btn secondary" onclick="document.getElementById('fileInput').click()">Choose JSON File</button>
+      <button class="action-btn primary" onclick="importJson()">Import Data</button>
+      <button class="action-btn" style="background:#475569;color:white;" onclick="closeModal('importModal')">Close</button>
+    </div>
+  </div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const HAZARD_TYPES = [
+      { type: 'bunker', icon: 'B', label: 'Bunker', class: 'marker-bunker' },
+      { type: 'water', icon: 'W', label: 'Water', class: 'marker-water' },
+      { type: 'trees', icon: 'T', label: 'Trees', class: 'marker-trees' },
+      { type: 'ob', icon: 'OB', label: 'OB', class: 'marker-ob' }
+    ];
+    let courseData = { name: 'Lombok Kosaido', gps: { lat: -8.367, lng: 116.107 }, holes: [] };
+    for (let i = 1; i <= 18; i++) {
+      courseData.holes.push({ number: i, par: 4, strokeIndex: i, tee: null, green: null, greenFront: null, greenBack: null, driverLanding: null, hazards: [] });
+    }
+    let map, currentHole = 1, hazardMode = null, dlMode = false, greenFrontMode = false, greenBackMode = false;
+    let teeMarker = null, greenMarker = null, greenFrontMarker = null, greenBackMarker = null, dlMarker = null, distanceLine = null, hazardMarkers = [];
+    let currentRotation = 0;
+    const DEFAULT_CENTER = { lat: -8.367, lng: 116.107 };
+
+    // Calculate bearing from point 1 to point 2 (in degrees, 0=north, 90=east)
+    function calculateBearing(p1, p2) {
+      const lat1 = p1.lat * Math.PI / 180;
+      const lat2 = p2.lat * Math.PI / 180;
+      const dLng = (p2.lng - p1.lng) * Math.PI / 180;
+      const y = Math.sin(dLng) * Math.cos(lat2);
+      const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+      let bearing = Math.atan2(y, x) * 180 / Math.PI;
+      return (bearing + 360) % 360;
+    }
+
+    // Orient the map so TEE is at bottom, GREEN is at top
+    function orientHole() {
+      if (!teeMarker || !greenMarker) {
+        setStatus('Place TEE and GREEN first');
+        return;
+      }
+      const tee = teeMarker.getLatLng();
+      const green = greenMarker.getLatLng();
+      const bearing = calculateBearing(tee, green);
+      // Rotate map so bearing points UP (subtract bearing, as CSS rotates clockwise)
+      currentRotation = -bearing;
+      applyRotation();
+      fitToHole();
+      setStatus('Oriented: bearing ' + Math.round(bearing) + ' degrees');
+    }
+
+    function applyRotation() {
+      const mapEl = document.getElementById('map');
+      mapEl.style.transform = 'rotate(' + currentRotation + 'deg)';
+    }
+
+    function resetRotation() {
+      currentRotation = 0;
+      applyRotation();
+      setStatus('Rotation reset');
+    }
+
+    function setZoom(level) {
+      map.setZoom(level);
+      updateZoomButtons();
+    }
+
+    function updateZoomButtons() {
+      const currentZoom = map.getZoom();
+      document.querySelectorAll('.zoom-btn').forEach(btn => {
+        const zoomLevel = parseFloat(btn.textContent);
+        btn.classList.toggle('active', Math.abs(currentZoom - zoomLevel) < 0.25);
+      });
+    }
+
+    function initApp() {
+      buildStrokeIndexSelect();
+      buildHazardTools();
+      initMap();
+      buildHoleNav();
+      loadFromStorage();
+      loadHole(1);
+    }
+
+    function buildStrokeIndexSelect() {
+      const sel = document.getElementById('strokeIndexSelect');
+      for (let i = 1; i <= 18; i++) {
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = i;
+        sel.appendChild(opt);
+      }
+    }
+
+    function buildHazardTools() {
+      const container = document.getElementById('hazardTools');
+      HAZARD_TYPES.forEach(h => {
+        const btn = document.createElement('button');
+        btn.className = 'hazard-btn';
+        btn.dataset.type = h.type;
+        btn.textContent = h.label;
+        btn.onclick = () => setHazardMode(h.type);
+        container.appendChild(btn);
+      });
+    }
+
+    function initMap() {
+      map = L.map('map', { zoomControl: false, attributionControl: false }).setView([DEFAULT_CENTER.lat, DEFAULT_CENTER.lng], 17);
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 20, maxNativeZoom: 18 }).addTo(map);
+      map.on('click', handleMapClick);
+      map.on('zoomend', updateZoomButtons);
+      updateZoomButtons();
+    }
+
+    function buildHoleNav() {
+      const nav = document.getElementById('holeNav');
+      nav.textContent = '';
+      for (let i = 1; i <= 18; i++) {
+        const btn = document.createElement('button');
+        btn.className = 'hole-btn' + (i === currentHole ? ' active' : '');
+        btn.textContent = i;
+        btn.onclick = () => loadHole(i);
+        nav.appendChild(btn);
+      }
+    }
+
+    function updateHoleNavStyles() {
+      const buttons = document.querySelectorAll('.hole-btn');
+      buttons.forEach((btn, idx) => {
+        const holeNum = idx + 1;
+        const hole = courseData.holes[holeNum - 1];
+        btn.className = 'hole-btn';
+        if (holeNum === currentHole) btn.classList.add('active');
+        if (hole.tee && hole.green) btn.classList.add('has-data');
+      });
+    }
+
+    function loadHole(holeNum) {
+      saveCurrentHole();
+      currentHole = holeNum;
+      // Reset rotation for new hole
+      currentRotation = 0;
+      applyRotation();
+      const hole = courseData.holes[holeNum - 1];
+      document.getElementById('currentHoleNum').textContent = holeNum;
+      document.getElementById('parSelect').value = hole.par || 4;
+      document.getElementById('strokeIndexSelect').value = hole.strokeIndex || holeNum;
+      clearMapMarkers();
+      if (hole.tee) createTeeMarker(hole.tee.lat, hole.tee.lng);
+      else { const off = (holeNum - 1) * 0.002; createTeeMarker(DEFAULT_CENTER.lat - off, DEFAULT_CENTER.lng + off * 0.5); }
+      if (hole.green) createGreenMarker(hole.green.lat, hole.green.lng);
+      else { const t = hole.tee || { lat: DEFAULT_CENTER.lat, lng: DEFAULT_CENTER.lng }; createGreenMarker(t.lat + 0.003, t.lng - 0.002); }
+      if (hole.hazards) hole.hazards.forEach((h, i) => createHazardMarker(h.type, h.lat, h.lng, i));
+      if (hole.greenFront) createGreenFrontMarker(hole.greenFront.lat, hole.greenFront.lng);
+      else if (greenFrontMarker) { map.removeLayer(greenFrontMarker); greenFrontMarker = null; }
+      if (hole.greenBack) createGreenBackMarker(hole.greenBack.lat, hole.greenBack.lng);
+      else if (greenBackMarker) { map.removeLayer(greenBackMarker); greenBackMarker = null; }
+      if (hole.driverLanding) createDLMarker(hole.driverLanding.lat, hole.driverLanding.lng);
+      else if (dlMarker) { map.removeLayer(dlMarker); dlMarker = null; }
+      greenFrontMode = false; greenBackMode = false;
+      document.getElementById('greenFrontBtn').style.background = '#4ade80';
+      document.getElementById('greenBackBtn').style.background = '#f87171';
+      dlMode = false;
+      document.getElementById('dlBtn').style.background = '#f97316';
+      updateDistanceLine();
+      updateDisplay();
+      updateDLDisplay();
+      updateGreenFCBDisplay();
+      fitToHole();
+      updateHoleNavStyles();
+      updateHazardList();
+      setStatus('Loaded Hole ' + holeNum);
+    }
+
+    function saveCurrentHole() {
+      const hole = courseData.holes[currentHole - 1];
+      hole.par = parseInt(document.getElementById('parSelect').value);
+      hole.strokeIndex = parseInt(document.getElementById('strokeIndexSelect').value);
+      if (teeMarker) { const p = teeMarker.getLatLng(); hole.tee = { lat: p.lat, lng: p.lng }; }
+      if (greenMarker) { const p = greenMarker.getLatLng(); hole.green = { lat: p.lat, lng: p.lng }; }
+      if (greenFrontMarker) { const p = greenFrontMarker.getLatLng(); hole.greenFront = { lat: p.lat, lng: p.lng }; }
+      if (greenBackMarker) { const p = greenBackMarker.getLatLng(); hole.greenBack = { lat: p.lat, lng: p.lng }; }
+      if (dlMarker) { const p = dlMarker.getLatLng(); hole.driverLanding = { lat: p.lat, lng: p.lng }; }
+    }
+
+    function clearMapMarkers() {
+      if (teeMarker) { map.removeLayer(teeMarker); teeMarker = null; }
+      if (greenMarker) { map.removeLayer(greenMarker); greenMarker = null; }
+      if (greenFrontMarker) { map.removeLayer(greenFrontMarker); greenFrontMarker = null; }
+      if (greenBackMarker) { map.removeLayer(greenBackMarker); greenBackMarker = null; }
+      if (dlMarker) { map.removeLayer(dlMarker); dlMarker = null; }
+      if (distanceLine) { map.removeLayer(distanceLine); distanceLine = null; }
+      hazardMarkers.forEach(m => map.removeLayer(m));
+      hazardMarkers = [];
+    }
+
+    function createTeeMarker(lat, lng) {
+      const div = document.createElement('div');
+      div.className = 'marker-tee';
+      div.textContent = 'TEE';
+      const icon = L.divIcon({ className: 'custom-marker', html: div.outerHTML, iconSize: [36, 36], iconAnchor: [18, 18] });
+      teeMarker = L.marker([lat, lng], { icon, draggable: true }).addTo(map);
+      teeMarker.on('drag', () => { updateDistanceLine(); updateDisplay(); });
+    }
+
+    function createGreenMarker(lat, lng) {
+      const div = document.createElement('div');
+      div.className = 'marker-green';
+      div.textContent = 'C';
+      const icon = L.divIcon({ className: 'custom-marker', html: div.outerHTML, iconSize: [32, 32], iconAnchor: [16, 16] });
+      greenMarker = L.marker([lat, lng], { icon, draggable: true }).addTo(map);
+      greenMarker.on('drag', () => { updateDistanceLine(); updateDisplay(); });
+    }
+
+    function createGreenFrontMarker(lat, lng) {
+      if (greenFrontMarker) { map.removeLayer(greenFrontMarker); greenFrontMarker = null; }
+      const div = document.createElement('div');
+      div.className = 'marker-green-front';
+      div.textContent = 'F';
+      const icon = L.divIcon({ className: 'custom-marker', html: div.outerHTML, iconSize: [28, 28], iconAnchor: [14, 14] });
+      greenFrontMarker = L.marker([lat, lng], { icon, draggable: true }).addTo(map);
+      greenFrontMarker.on('drag', () => {
+        const p = greenFrontMarker.getLatLng();
+        courseData.holes[currentHole - 1].greenFront = { lat: p.lat, lng: p.lng };
+        updateGreenFCBDisplay();
+      });
+      updateGreenFCBDisplay();
+    }
+
+    function createGreenBackMarker(lat, lng) {
+      if (greenBackMarker) { map.removeLayer(greenBackMarker); greenBackMarker = null; }
+      const div = document.createElement('div');
+      div.className = 'marker-green-back';
+      div.textContent = 'B';
+      const icon = L.divIcon({ className: 'custom-marker', html: div.outerHTML, iconSize: [28, 28], iconAnchor: [14, 14] });
+      greenBackMarker = L.marker([lat, lng], { icon, draggable: true }).addTo(map);
+      greenBackMarker.on('drag', () => {
+        const p = greenBackMarker.getLatLng();
+        courseData.holes[currentHole - 1].greenBack = { lat: p.lat, lng: p.lng };
+        updateGreenFCBDisplay();
+      });
+      updateGreenFCBDisplay();
+    }
+
+    function toggleGreenFrontMode() {
+      greenFrontMode = !greenFrontMode;
+      greenBackMode = false;
+      document.getElementById('greenFrontBtn').style.background = greenFrontMode ? '#16a34a' : '#4ade80';
+      document.getElementById('greenBackBtn').style.background = '#f87171';
+      setStatus(greenFrontMode ? 'Tap map to place Front of green' : 'Front mode off');
+    }
+
+    function toggleGreenBackMode() {
+      greenBackMode = !greenBackMode;
+      greenFrontMode = false;
+      document.getElementById('greenBackBtn').style.background = greenBackMode ? '#b91c1c' : '#f87171';
+      document.getElementById('greenFrontBtn').style.background = '#4ade80';
+      setStatus(greenBackMode ? 'Tap map to place Back of green' : 'Back mode off');
+    }
+
+    function clearGreenFront() {
+      if (greenFrontMarker) { map.removeLayer(greenFrontMarker); greenFrontMarker = null; }
+      courseData.holes[currentHole - 1].greenFront = null;
+      updateGreenFCBDisplay();
+    }
+
+    function clearGreenBack() {
+      if (greenBackMarker) { map.removeLayer(greenBackMarker); greenBackMarker = null; }
+      courseData.holes[currentHole - 1].greenBack = null;
+      updateGreenFCBDisplay();
+    }
+
+    function updateGreenFCBDisplay() {
+      const hole = courseData.holes[currentHole - 1];
+      const fmt = (p) => p ? p.lat.toFixed(5) + ', ' + p.lng.toFixed(5) : 'Not set';
+      document.getElementById('greenFrontCoords').textContent = fmt(hole.greenFront);
+      document.getElementById('greenBackCoords').textContent = fmt(hole.greenBack);
+    }
+
+    function createHazardMarker(type, lat, lng, index) {
+      const def = HAZARD_TYPES.find(h => h.type === type) || HAZARD_TYPES[0];
+      const div = document.createElement('div');
+      div.className = def.class;
+      div.textContent = def.icon;
+      const icon = L.divIcon({ className: 'custom-marker', html: div.outerHTML, iconSize: [24, 24], iconAnchor: [12, 12] });
+      const marker = L.marker([lat, lng], { icon, draggable: true }).addTo(map);
+      marker.hazardIndex = index;
+      marker.hazardType = type;
+      marker.on('drag', () => {
+        const p = marker.getLatLng();
+        courseData.holes[currentHole - 1].hazards[marker.hazardIndex] = { type: marker.hazardType, lat: p.lat, lng: p.lng };
+      });
+      hazardMarkers.push(marker);
+    }
+
+    function createDLMarker(lat, lng) {
+      if (dlMarker) { map.removeLayer(dlMarker); dlMarker = null; }
+      const div = document.createElement('div');
+      div.className = 'marker-dl';
+      div.textContent = 'DL';
+      const icon = L.divIcon({ className: 'custom-marker', html: div.outerHTML, iconSize: [32, 32], iconAnchor: [16, 16] });
+      dlMarker = L.marker([lat, lng], { icon, draggable: true }).addTo(map);
+      dlMarker.on('drag', () => {
+        const p = dlMarker.getLatLng();
+        courseData.holes[currentHole - 1].driverLanding = { lat: p.lat, lng: p.lng };
+        updateDLDisplay();
+      });
+      updateDLDisplay();
+    }
+
+    function toggleDLMode() {
+      dlMode = !dlMode;
+      document.getElementById('dlBtn').style.background = dlMode ? '#ea580c' : '#f97316';
+      setStatus(dlMode ? 'Tap map to place Driver Landing' : 'DL mode off');
+    }
+
+    function clearDL() {
+      if (dlMarker) { map.removeLayer(dlMarker); dlMarker = null; }
+      courseData.holes[currentHole - 1].driverLanding = null;
+      updateDLDisplay();
+    }
+
+    function updateDLDisplay() {
+      const dl = courseData.holes[currentHole - 1].driverLanding;
+      document.getElementById('dlCoords').textContent = dl ? dl.lat.toFixed(5) + ', ' + dl.lng.toFixed(5) : 'Not set';
+    }
+
+    function updateDistanceLine() {
+      if (distanceLine) map.removeLayer(distanceLine);
+      if (teeMarker && greenMarker) {
+        const t = teeMarker.getLatLng(), g = greenMarker.getLatLng();
+        distanceLine = L.polyline([[t.lat, t.lng], [g.lat, g.lng]], { color: '#fff', weight: 2, dashArray: '5,10', opacity: 0.8 }).addTo(map);
+      }
+    }
+
+    function updateDisplay() {
+      if (teeMarker && greenMarker) {
+        const tee = teeMarker.getLatLng();
+        const green = greenMarker.getLatLng();
+        const dist = calculateDistance(tee, green);
+        const bearing = calculateBearing(tee, green);
+        document.getElementById('holeDistance').textContent = Math.round(dist) + 'm';
+        document.getElementById('holeBearing').textContent = Math.round(bearing) + '\u00B0';
+      }
+      document.getElementById('hazardCount').textContent = courseData.holes[currentHole - 1].hazards.length;
+    }
+
+    function calculateDistance(p1, p2) {
+      const R = 6371000, lat1 = p1.lat * Math.PI / 180, lat2 = p2.lat * Math.PI / 180;
+      const dLat = (p2.lat - p1.lat) * Math.PI / 180, dLng = (p2.lng - p1.lng) * Math.PI / 180;
+      const a = Math.sin(dLat/2)**2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng/2)**2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+
+    function fitToHole() {
+      if (teeMarker && greenMarker) {
+        const pts = [teeMarker.getLatLng(), greenMarker.getLatLng()];
+        if (greenFrontMarker) pts.push(greenFrontMarker.getLatLng());
+        if (greenBackMarker) pts.push(greenBackMarker.getLatLng());
+        map.fitBounds(L.latLngBounds(pts), { padding: [80, 50], maxZoom: 18 });
+      }
+    }
+
+    function setHazardMode(type) {
+      if (hazardMode === type) { hazardMode = null; setStatus('Hazard mode off'); }
+      else { hazardMode = type; setStatus('Tap map to place ' + type); }
+      document.querySelectorAll('.hazard-btn').forEach(b => b.classList.toggle('active', b.dataset.type === hazardMode));
+    }
+
+    function handleMapClick(e) {
+      if (greenFrontMode) {
+        createGreenFrontMarker(e.latlng.lat, e.latlng.lng);
+        courseData.holes[currentHole - 1].greenFront = { lat: e.latlng.lat, lng: e.latlng.lng };
+        greenFrontMode = false;
+        document.getElementById('greenFrontBtn').style.background = '#4ade80';
+        setStatus('Front of green placed — drag to adjust');
+        return;
+      }
+      if (greenBackMode) {
+        createGreenBackMarker(e.latlng.lat, e.latlng.lng);
+        courseData.holes[currentHole - 1].greenBack = { lat: e.latlng.lat, lng: e.latlng.lng };
+        greenBackMode = false;
+        document.getElementById('greenBackBtn').style.background = '#f87171';
+        setStatus('Back of green placed — drag to adjust');
+        return;
+      }
+      if (dlMode) {
+        createDLMarker(e.latlng.lat, e.latlng.lng);
+        courseData.holes[currentHole - 1].driverLanding = { lat: e.latlng.lat, lng: e.latlng.lng };
+        dlMode = false;
+        document.getElementById('dlBtn').style.background = '#f97316';
+        setStatus('Driver Landing placed — drag to adjust');
+        return;
+      }
+      if (hazardMode) {
+        const hole = courseData.holes[currentHole - 1];
+        hole.hazards.push({ type: hazardMode, lat: e.latlng.lat, lng: e.latlng.lng });
+        createHazardMarker(hazardMode, e.latlng.lat, e.latlng.lng, hole.hazards.length - 1);
+        updateHazardList();
+        updateDisplay();
+        setStatus(hazardMode + ' added');
+      }
+    }
+
+    function updateHazardList() {
+      const list = document.getElementById('hazardList');
+      list.textContent = '';
+      const hazards = courseData.holes[currentHole - 1].hazards;
+      if (hazards.length === 0) {
+        const empty = document.createElement('div');
+        empty.style.cssText = 'color:#64748b;font-size:12px;padding:8px;';
+        empty.textContent = 'No hazards added';
+        list.appendChild(empty);
+        return;
+      }
+      hazards.forEach((h, i) => {
+        const item = document.createElement('div');
+        item.className = 'hazard-item';
+        const span = document.createElement('span');
+        span.textContent = h.type + ' (' + h.lat.toFixed(5) + ', ' + h.lng.toFixed(5) + ')';
+        const btn = document.createElement('button');
+        btn.className = 'delete-btn';
+        btn.textContent = 'x';
+        btn.onclick = () => deleteHazard(i);
+        item.appendChild(span);
+        item.appendChild(btn);
+        list.appendChild(item);
+      });
+    }
+
+    function deleteHazard(index) {
+      courseData.holes[currentHole - 1].hazards.splice(index, 1);
+      loadHole(currentHole);
+    }
+
+    function updateHolePar() { courseData.holes[currentHole - 1].par = parseInt(document.getElementById('parSelect').value); }
+    function updateHoleStrokeIndex() { courseData.holes[currentHole - 1].strokeIndex = parseInt(document.getElementById('strokeIndexSelect').value); }
+    function prevHole() { if (currentHole > 1) loadHole(currentHole - 1); }
+    function nextHole() { if (currentHole < 18) loadHole(currentHole + 1); }
+
+    function clearHole() {
+      if (confirm('Clear Hole ' + currentHole + '?')) {
+        courseData.holes[currentHole - 1] = { number: currentHole, par: 4, strokeIndex: currentHole, tee: null, green: null, greenFront: null, greenBack: null, driverLanding: null, hazards: [] };
+        loadHole(currentHole);
+      }
+    }
+
+    function saveCourse() {
+      saveCurrentHole();
+      courseData.name = document.getElementById('courseName').value;
+      localStorage.setItem('fairways_course_mapper', JSON.stringify(courseData));
+      setStatus('Saved!');
+      updateHoleNavStyles();
+    }
+
+    function loadFromStorage() {
+      const saved = localStorage.getItem('fairways_course_mapper');
+      if (saved) {
+        try {
+          courseData = JSON.parse(saved);
+          document.getElementById('courseName').value = courseData.name || 'Unnamed';
+        } catch (e) {}
+      }
+    }
+
+    function showExportModal() {
+      saveCurrentHole();
+      courseData.name = document.getElementById('courseName').value;
+      const exp = {
+        name: courseData.name,
+        gps: courseData.gps,
+        exportedAt: new Date().toISOString(),
+        holes: courseData.holes.map(h => ({
+          number: h.number, par: h.par, strokeIndex: h.strokeIndex,
+          tee: h.tee, green: h.green,
+          greenFront: h.greenFront || null,
+          greenBack: h.greenBack || null,
+          driverLanding: h.driverLanding || null,
+          distance: h.tee && h.green ? Math.round(calculateDistance(h.tee, h.green)) : null,
+          hazards: h.hazards
+        }))
+      };
+      document.getElementById('jsonOutput').value = JSON.stringify(exp, null, 2);
+      document.getElementById('exportModal').classList.add('show');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id || 'exportModal').classList.remove('show');
+    }
+
+    function showImportModal() {
+      document.getElementById('jsonInput').value = '';
+      document.getElementById('importModal').classList.add('show');
+    }
+
+    function handleFileSelect(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          document.getElementById('jsonInput').value = e.target.result;
+          setStatus('File loaded - click Import Data');
+        };
+        reader.readAsText(file);
+      }
+    }
+
+    function importJson() {
+      const jsonText = document.getElementById('jsonInput').value.trim();
+      if (!jsonText) {
+        setStatus('Please paste JSON or select a file');
+        return;
+      }
+      try {
+        const imported = JSON.parse(jsonText);
+        if (!imported.holes || !Array.isArray(imported.holes)) {
+          throw new Error('Invalid format - missing holes array');
+        }
+        // Update course data
+        courseData.name = imported.name || 'Imported Course';
+        courseData.gps = imported.gps || courseData.gps;
+        document.getElementById('courseName').value = courseData.name;
+        // Import holes
+        imported.holes.forEach((h, idx) => {
+          if (idx < 18) {
+            courseData.holes[idx] = {
+              number: h.number || idx + 1,
+              par: h.par || 4,
+              strokeIndex: h.strokeIndex || idx + 1,
+              tee: h.tee || null,
+              green: h.green || null,
+              greenFront: h.greenFront || null,
+              greenBack: h.greenBack || null,
+              driverLanding: h.driverLanding || null,
+              hazards: h.hazards || []
+            };
+          }
+        });
+        // Save to localStorage and reload
+        localStorage.setItem('fairways_course_mapper', JSON.stringify(courseData));
+        closeModal('importModal');
+        loadHole(1);
+        updateHoleNavStyles();
+        setStatus('Imported ' + courseData.name + ' successfully!');
+      } catch (e) {
+        setStatus('Import error: ' + e.message);
+      }
+    }
+
+    function findMyLocation() {
+      setStatus('Finding your location...');
+      if (!navigator.geolocation) {
+        setStatus('Geolocation not supported');
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        function(position) {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          map.setView([lat, lng], 17);
+          // Update default center for new holes
+          courseData.gps = { lat, lng };
+          setStatus('Location found! Center map on your course.');
+        },
+        function(error) {
+          setStatus('Location error: ' + error.message);
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
+
+    function copyJson() {
+      navigator.clipboard.writeText(document.getElementById('jsonOutput').value).then(() => { setStatus('Copied!'); closeModal('exportModal'); });
+    }
+
+    function downloadJson() {
+      const blob = new Blob([document.getElementById('jsonOutput').value], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = courseData.name.replace(/\s+/g, '_') + '_course.json';
+      a.click();
+    }
+
+    function setStatus(msg) { document.getElementById('status').textContent = msg; }
+
+    initApp();
+  </script>
+</body>
+</html>
