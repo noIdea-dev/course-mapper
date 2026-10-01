@@ -215,6 +215,22 @@
     .modal-content { background: #1e293b; border-radius: 16px; padding: 20px; width: 100%; max-width: 500px; max-height: 80vh; overflow-y: auto; }
     .modal-content h2 { margin-bottom: 16px; color: #4ade80; }
     .modal-content textarea { width: 100%; height: 200px; background: #0f172a; border: 1px solid #475569; border-radius: 8px; color: white; padding: 12px; font-family: monospace; font-size: 12px; margin-bottom: 12px; }
+    .tees-modal-content { background: #1e293b; border-radius: 16px; padding: 20px; width: 100%; max-width: 700px; max-height: 90vh; overflow-y: auto; }
+    .tees-modal-content h2 { margin-bottom: 12px; color: #4ade80; }
+    .tee-form-row { display: flex; gap: 8px; align-items: flex-end; margin-bottom: 10px; flex-wrap: wrap; }
+    .tee-form-row div { display: flex; flex-direction: column; }
+    .tee-form-row label { color: #94a3b8; font-size: 10px; margin-bottom: 2px; }
+    .tee-form-row input { background: #334155; border: 1px solid #475569; color: white; padding: 5px 8px; border-radius: 4px; font-size: 12px; }
+    .tee-item { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid #334155; font-size: 11px; }
+    .tee-grid-wrap { overflow-x: auto; margin-top: 10px; }
+    .tee-grid { width: 100%; border-collapse: collapse; font-size: 11px; }
+    .tee-grid th { background: #334155; padding: 5px 6px; text-align: center; white-space: nowrap; color: #4ade80; }
+    .tee-grid td { padding: 2px 4px; border-bottom: 1px solid #1e293b; text-align: center; background: rgba(0,0,0,0.2); }
+    .tee-grid tr:nth-child(even) td { background: rgba(255,255,255,0.03); }
+    .tee-grid input[type=number] { background: #0f172a; border: 1px solid #475569; color: white; width: 58px; padding: 2px 4px; border-radius: 3px; text-align: center; font-size: 11px; }
+    .tee-grid .total-row td { background: #334155; font-weight: bold; color: #4ade80; }
+    .map-src-btn { background: rgba(255,255,255,0.1); border: 1px solid #475569; border-radius: 5px; color: #94a3b8; font-size: 11px; font-weight: 600; padding: 4px 9px; cursor: pointer; white-space: nowrap; }
+    .map-src-btn.active { background: #22c55e; border-color: #22c55e; color: #0f172a; }
   </style>
 </head>
 <body>
@@ -273,6 +289,29 @@
         </div>
 
         <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:10px 12px;">
+          <div style="color:#4ade80;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">8 — Add Tees, Distances &amp; Ratings</div>
+          <p style="font-size:12px;color:#cbd5e1;margin-bottom:6px;">In the right panel, tap <strong style="color:#8b5cf6;">Manage Tees &amp; Distances</strong> to define multiple tees (White, Blue, Red etc.) with Course Rating and Slope Rating, then enter the yardage for each hole per tee. Use <strong style="color:#3b82f6;">Fill GPS</strong> to pre-fill a tee's distances from your marker positions as a starting point.</p>
+          <p style="font-size:12px;color:#94a3b8;">Tee data is included in the exported JSON and imported automatically into the app — each tee appears as a selectable option when starting a match.</p>
+        </div>
+
+        <div style="background:rgba(59,130,246,0.1);border:1px solid #3b82f6;border-radius:8px;padding:10px 12px;">
+          <div style="color:#60a5fa;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Map Tile Options</div>
+          <p style="font-size:12px;color:#cbd5e1;margin-bottom:8px;">Two satellite map sources are available — toggle between them using the <strong style="color:#22c55e;">ArcGIS</strong> / <strong style="color:#fbbf24;">Google</strong> buttons in the header.</p>
+          <p style="font-size:12px;color:#4ade80;margin-bottom:4px;font-weight:600;">ArcGIS (free, no sign-up)</p>
+          <p style="font-size:12px;color:#cbd5e1;margin-bottom:10px;">High-res satellite imagery with no account or API key required. Works immediately out of the box. Quality varies by location.</p>
+          <p style="font-size:12px;color:#fbbf24;margin-bottom:4px;font-weight:600;">Google Maps Satellite (sharper, free API key required)</p>
+          <p style="font-size:12px;color:#cbd5e1;margin-bottom:8px;">The same imagery you see in Google Maps/Earth — noticeably sharper for golf courses. Requires a <strong style="color:white;">Google Maps API key</strong>:</p>
+          <ol style="font-size:12px;color:#cbd5e1;padding-left:16px;display:flex;flex-direction:column;gap:4px;margin-bottom:8px;">
+            <li>Go to <strong style="color:white;">console.cloud.google.com</strong> and sign in with your Google account</li>
+            <li>Create a new project (or use an existing one)</li>
+            <li>Go to <strong style="color:white;">APIs &amp; Services → Library</strong> and enable <strong style="color:white;">Maps JavaScript API</strong></li>
+            <li>Go to <strong style="color:white;">APIs &amp; Services → Credentials → Create Credentials → API Key</strong></li>
+            <li>Copy the key and paste it when prompted after clicking the Google button in Course Mapper</li>
+          </ol>
+          <p style="font-size:11px;color:#94a3b8;">Free tier gives $200/month credit. Maps JavaScript API costs $7 per 1,000 loads. At that rate you'd need to open this page ~28,000 times a month to see a bill — it's effectively free for personal use. A credit card is required to create the account but will not be charged at personal-use volumes.</p>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:10px 12px;">
           <div style="color:#4ade80;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Tips</div>
           <ul style="font-size:12px;color:#cbd5e1;padding-left:16px;display:flex;flex-direction:column;gap:4px;">
             <li>Best done on-course with the phone — use <strong style="color:white;">My Location</strong> to stay oriented</li>
@@ -294,6 +333,10 @@
       <div class="header">
         <h1>Course Mapper</h1>
         <input type="text" class="course-name-input" id="courseName" placeholder="Course Name" value="Lombok Kosaido">
+        <div style="display:flex;gap:3px;flex-shrink:0;">
+          <button id="btnArcGIS" class="map-src-btn active" onclick="switchMapLayer('arcgis')" title="Free satellite — no account needed">ArcGIS</button>
+          <button id="btnGoogle" class="map-src-btn" onclick="switchMapLayer('google')" title="Sharper Google Maps Satellite — free API key required">Google ★</button>
+        </div>
         <button onclick="document.getElementById('helpModal').classList.add('show')" style="background:rgba(255,255,255,0.1);border:1px solid #475569;border-radius:6px;color:#4ade80;font-size:13px;font-weight:700;width:28px;height:28px;cursor:pointer;flex-shrink:0;">?</button>
       </div>
       <div id="map-container">
@@ -358,6 +401,11 @@
         <div class="hazard-list" id="hazardList"></div>
       </div>
       <div class="info-panel">
+        <h3>Tees (<span id="teeCount">0</span>)</h3>
+        <div id="teesPanelList"></div>
+        <button class="action-btn" style="background:#8b5cf6;color:white;margin-top:6px;" onclick="showTeesModal()">Manage Tees &amp; Distances</button>
+      </div>
+      <div class="info-panel">
         <h3>Driver Landing</h3>
         <div id="dlCoords" style="color:#94a3b8;font-size:10px;margin-bottom:6px;">Not set</div>
         <div class="btn-row">
@@ -405,6 +453,41 @@
       <button class="action-btn" style="background:#475569;color:white;" onclick="closeModal('importModal')">Close</button>
     </div>
   </div>
+  <div class="modal" id="googleKeyModal">
+    <div class="modal-content" style="max-width:440px;">
+      <h2>Google Maps Satellite</h2>
+      <p style="color:#cbd5e1;font-size:13px;margin-bottom:8px;">Sharper imagery than ArcGIS. Requires a free Google Maps API key.</p>
+      <p style="color:#4ade80;font-size:12px;font-weight:600;margin-bottom:4px;">Free tier: $200/month credit (~28,000 map loads free)</p>
+      <p style="color:#94a3b8;font-size:12px;margin-bottom:14px;">Personal use never hits a bill. A credit card is required to create the account but won't be charged.</p>
+      <p style="color:#cbd5e1;font-size:12px;margin-bottom:10px;"><strong>How to get your key:</strong><br>
+        1. Go to <strong style="color:white;">console.cloud.google.com</strong><br>
+        2. APIs &amp; Services → Library → enable <strong style="color:white;">Maps JavaScript API</strong><br>
+        3. Credentials → Create API Key → copy it
+      </p>
+      <input id="googleKeyInput" type="text" placeholder="Paste API key here…"
+        style="width:100%;background:#0f172a;border:1px solid #475569;border-radius:6px;color:white;padding:10px 12px;font-size:13px;margin-bottom:12px;box-sizing:border-box;">
+      <button class="action-btn primary" onclick="saveGoogleKey()">Activate Google Satellite</button>
+      <button class="action-btn" style="background:#475569;color:white;" onclick="closeModal('googleKeyModal')">Cancel</button>
+      <p style="color:#475569;font-size:10px;margin-top:10px;text-align:center;">Key stored in your browser only — never sent anywhere except Google's servers.</p>
+    </div>
+  </div>
+  <div class="modal" id="teesModal">
+    <div class="tees-modal-content">
+      <h2>Tees &amp; Distances</h2>
+      <div class="tee-form-row">
+        <div><label>Tee Name</label><input id="newTeeName" placeholder="e.g. White" style="width:90px;"></div>
+        <div><label>Course Rating</label><input id="newTeeCR" type="number" step="0.1" placeholder="72.4" style="width:75px;"></div>
+        <div><label>Slope Rating</label><input id="newTeeSR" type="number" placeholder="126" style="width:65px;"></div>
+        <button class="action-btn primary" style="width:auto;padding:5px 14px;margin-bottom:0;" onclick="addTeeFromForm()">Add Tee</button>
+      </div>
+      <div id="teesModalList" style="margin-bottom:10px;"></div>
+      <div class="tee-grid-wrap"><div id="teesDistanceGrid"></div></div>
+      <div style="display:flex;gap:8px;margin-top:14px;">
+        <button class="action-btn primary" style="flex:1;" onclick="saveTeesAndClose()">Save &amp; Close</button>
+        <button class="action-btn" style="flex:1;background:#475569;color:white;" onclick="closeModal('teesModal')">Cancel</button>
+      </div>
+    </div>
+  </div>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     const HAZARD_TYPES = [
@@ -413,7 +496,7 @@
       { type: 'trees', icon: 'T', label: 'Trees', class: 'marker-trees' },
       { type: 'ob', icon: 'OB', label: 'OB', class: 'marker-ob' }
     ];
-    let courseData = { name: 'Lombok Kosaido', gps: { lat: -8.367, lng: 116.107 }, holes: [] };
+    let courseData = { name: 'Lombok Kosaido', gps: { lat: -8.367, lng: 116.107 }, tees: [], holes: [] };
     for (let i = 1; i <= 18; i++) {
       courseData.holes.push({ number: i, par: 4, strokeIndex: i, tee: null, green: null, greenFront: null, greenBack: null, driverLanding: null, hazards: [] });
     }
@@ -504,12 +587,78 @@
       });
     }
 
+    let arcgisLayer = null;
+    let googleLayer = null;
+    let currentMapLayer = 'arcgis';
+
     function initMap() {
       map = L.map('map', { zoomControl: false, attributionControl: false }).setView([DEFAULT_CENTER.lat, DEFAULT_CENTER.lng], 17);
-      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 20, maxNativeZoom: 18 }).addTo(map);
+      arcgisLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 20, maxNativeZoom: 18 }).addTo(map);
       map.on('click', handleMapClick);
       map.on('zoomend', updateZoomButtons);
       updateZoomButtons();
+      // Restore saved map layer preference
+      const savedLayer = localStorage.getItem('fairways_map_layer');
+      const savedKey = localStorage.getItem('fairways_google_key');
+      if (savedLayer === 'google' && savedKey) { loadGoogleMaps(savedKey); }
+    }
+
+    function switchMapLayer(type) {
+      if (type === 'google') {
+        const key = localStorage.getItem('fairways_google_key') || '';
+        if (!key) { document.getElementById('googleKeyModal').classList.add('show'); return; }
+        loadGoogleMaps(key);
+      } else {
+        switchToArcGIS();
+      }
+    }
+
+    function switchToArcGIS() {
+      if (googleLayer) { map.removeLayer(googleLayer); googleLayer = null; }
+      if (arcgisLayer && !map.hasLayer(arcgisLayer)) arcgisLayer.addTo(map);
+      currentMapLayer = 'arcgis';
+      localStorage.setItem('fairways_map_layer', 'arcgis');
+      updateMapBtns();
+      setStatus('ArcGIS satellite active');
+    }
+
+    function saveGoogleKey() {
+      const key = document.getElementById('googleKeyInput').value.trim();
+      if (!key) { setStatus('Paste your API key'); return; }
+      localStorage.setItem('fairways_google_key', key);
+      closeModal('googleKeyModal');
+      loadGoogleMaps(key);
+    }
+
+    function loadGoogleMaps(key) {
+      setStatus('Loading Google Maps…');
+      if (window.google && window.google.maps) { applyGoogleLayer(); return; }
+      window._onGoogleMapsLoaded = function() {
+        const s = document.createElement('script');
+        s.src = 'https://unpkg.com/leaflet.gridlayer.googlemutant@0.14.0/dist/Leaflet.GoogleMutant.js';
+        s.onload = applyGoogleLayer;
+        document.head.appendChild(s);
+      };
+      const s = document.createElement('script');
+      s.src = `https://maps.googleapis.com/maps/api/js?key=${key}&callback=_onGoogleMapsLoaded`;
+      s.async = true;
+      s.onerror = function() { setStatus('Invalid API key — switched back to ArcGIS'); switchToArcGIS(); };
+      document.head.appendChild(s);
+    }
+
+    function applyGoogleLayer() {
+      if (arcgisLayer && map.hasLayer(arcgisLayer)) map.removeLayer(arcgisLayer);
+      if (googleLayer) map.removeLayer(googleLayer);
+      googleLayer = L.gridLayer.googleMutant({ type: 'satellite', maxZoom: 22 }).addTo(map);
+      currentMapLayer = 'google';
+      localStorage.setItem('fairways_map_layer', 'google');
+      updateMapBtns();
+      setStatus('Google Satellite active');
+    }
+
+    function updateMapBtns() {
+      document.getElementById('btnArcGIS').classList.toggle('active', currentMapLayer === 'arcgis');
+      document.getElementById('btnGoogle').classList.toggle('active', currentMapLayer === 'google');
     }
 
     function buildHoleNav() {
@@ -858,7 +1007,9 @@
       if (saved) {
         try {
           courseData = JSON.parse(saved);
+          if (!courseData.tees) courseData.tees = [];
           document.getElementById('courseName').value = courseData.name || 'Unnamed';
+          renderTeesPanel();
         } catch (e) {}
       }
     }
@@ -870,6 +1021,12 @@
         name: courseData.name,
         gps: courseData.gps,
         exportedAt: new Date().toISOString(),
+        tees: courseData.tees.length > 0 ? courseData.tees.map(t => ({
+          name: t.name,
+          courseRating: t.courseRating || null,
+          slopeRating: t.slopeRating || null,
+          distances: t.distances
+        })) : undefined,
         holes: courseData.holes.map(h => ({
           number: h.number, par: h.par, strokeIndex: h.strokeIndex,
           tee: h.tee, green: h.green,
@@ -920,6 +1077,18 @@
         courseData.name = imported.name || 'Imported Course';
         courseData.gps = imported.gps || courseData.gps;
         document.getElementById('courseName').value = courseData.name;
+        // Import tees
+        if (imported.tees && Array.isArray(imported.tees)) {
+          courseData.tees = imported.tees.map(t => ({
+            name: t.name || '',
+            courseRating: t.courseRating || null,
+            slopeRating: t.slopeRating || null,
+            distances: Array.isArray(t.distances) ? t.distances : new Array(18).fill(0)
+          }));
+        } else {
+          courseData.tees = [];
+        }
+        renderTeesPanel();
         // Import holes
         imported.holes.forEach((h, idx) => {
           if (idx < 18) {
@@ -982,6 +1151,102 @@
     }
 
     function setStatus(msg) { document.getElementById('status').textContent = msg; }
+
+    // MARK: - Tee management
+
+    function showTeesModal() {
+      saveCurrentHole();
+      renderTeesModal();
+      document.getElementById('teesModal').classList.add('show');
+    }
+
+    function saveTeesAndClose() {
+      renderTeesPanel();
+      closeModal('teesModal');
+      setStatus('Tees saved');
+    }
+
+    function addTeeFromForm() {
+      const name = document.getElementById('newTeeName').value.trim();
+      if (!name) { setStatus('Enter a tee name'); return; }
+      const cr = parseFloat(document.getElementById('newTeeCR').value) || null;
+      const sr = parseInt(document.getElementById('newTeeSR').value) || null;
+      courseData.tees.push({ name, courseRating: cr, slopeRating: sr, distances: new Array(18).fill(0) });
+      document.getElementById('newTeeName').value = '';
+      document.getElementById('newTeeCR').value = '';
+      document.getElementById('newTeeSR').value = '';
+      renderTeesModal();
+    }
+
+    function removeTee(i) {
+      courseData.tees.splice(i, 1);
+      renderTeesModal();
+    }
+
+    function fillTeeFromGPS(teeIndex) {
+      courseData.tees[teeIndex].distances = courseData.holes.map(h =>
+        (h.tee && h.green) ? Math.round(calculateDistance(h.tee, h.green)) : 0
+      );
+      renderTeesModal();
+      setStatus('Filled from GPS distances');
+    }
+
+    function renderTeesModal() {
+      // Tee list
+      const listEl = document.getElementById('teesModalList');
+      if (courseData.tees.length === 0) {
+        listEl.innerHTML = '<p style="color:#94a3b8;font-size:11px;margin-bottom:6px;">No tees yet — add one above.</p>';
+      } else {
+        listEl.innerHTML = courseData.tees.map((t, i) => `
+          <div class="tee-item">
+            <span><strong style="color:#4ade80;">${t.name}</strong>
+              ${t.courseRating != null ? `<span style="color:#94a3b8;"> CR ${t.courseRating}</span>` : ''}
+              ${t.slopeRating != null ? `<span style="color:#94a3b8;"> · Slope ${t.slopeRating}</span>` : ''}
+            </span>
+            <div style="display:flex;gap:4px;">
+              <button onclick="fillTeeFromGPS(${i})" style="background:#3b82f6;border:none;color:white;border-radius:3px;padding:2px 8px;font-size:10px;cursor:pointer;">Fill GPS</button>
+              <button onclick="removeTee(${i})" style="background:#ef4444;border:none;color:white;border-radius:3px;padding:2px 8px;font-size:10px;cursor:pointer;">✕</button>
+            </div>
+          </div>`).join('');
+      }
+
+      // Distance grid
+      const gridEl = document.getElementById('teesDistanceGrid');
+      if (courseData.tees.length === 0) {
+        gridEl.innerHTML = '';
+        return;
+      }
+      let html = '<table class="tee-grid"><thead><tr><th>Hole</th><th>Par</th><th>SI</th>';
+      courseData.tees.forEach(t => { html += `<th>${t.name}</th>`; });
+      html += '</tr></thead><tbody>';
+      courseData.holes.forEach((h, hi) => {
+        html += `<tr><td>${h.number}</td><td>${h.par}</td><td>${h.strokeIndex}</td>`;
+        courseData.tees.forEach((t, ti) => {
+          const v = t.distances[hi] > 0 ? t.distances[hi] : '';
+          html += `<td><input type="number" min="0" max="999" value="${v}" placeholder="m" onchange="courseData.tees[${ti}].distances[${hi}]=parseInt(this.value)||0"></td>`;
+        });
+        html += '</tr>';
+      });
+      // Totals row
+      html += '<tr class="total-row"><td colspan="3">Total</td>';
+      courseData.tees.forEach(t => {
+        const total = t.distances.reduce((s, d) => s + (d || 0), 0);
+        html += `<td>${total > 0 ? total + 'm' : '—'}</td>`;
+      });
+      html += '</tr></tbody></table>';
+      gridEl.innerHTML = html;
+    }
+
+    function renderTeesPanel() {
+      document.getElementById('teeCount').textContent = courseData.tees.length;
+      const el = document.getElementById('teesPanelList');
+      el.innerHTML = courseData.tees.map(t =>
+        `<div class="tee-item" style="border-bottom:1px solid #334155;padding:3px 0;">
+          <span style="color:#e2e8f0;">${t.name}</span>
+          <span style="color:#94a3b8;font-size:10px;">${t.courseRating != null ? 'CR ' + t.courseRating : ''}${t.slopeRating != null ? (t.courseRating != null ? ' · ' : '') + 'Sl ' + t.slopeRating : ''}</span>
+        </div>`
+      ).join('');
+    }
 
     initApp();
   </script>
