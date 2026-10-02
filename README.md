@@ -1,23 +1,27 @@
 # Course Mapper
 
-A browser-based tool for mapping golf courses on satellite imagery. Used to build course data for MatchPlayGolf, EzyGolfer, and StablefordGolf iOS apps.
+A browser-based tool for mapping golf courses on satellite imagery. Exports JSON course files for **EzyGolfer Pro** (iOS) and **MatchPlayGolf** (Android).
 
-**Live tool:** https://drgreenland.github.io/course-mapper/
+Open `course-mapper.html` directly in any desktop browser — no server or installation required.
 
 ## What it does
 
-- Load a satellite map centred on any golf course
-- For each hole, pin the tee box, green centre, front and back of green, hazards (bunker, water, OB, trees), and a driver landing area
-- Set par and stroke index per hole
+- Satellite map (ArcGIS default; optional Google Maps Satellite with your own API key)
+- For each hole, place tee box and green centre markers, set par and stroke index, optionally add hazards (bunker, water, OB, trees) and a driver landing marker
+- Multi-tee support: add named tees (White, Blue, Red etc.) with Course Rating and Slope Rating
 - Export the full course as a JSON file
-- Import the JSON into any of the supported apps via Settings → Import Course from File
+- Import the JSON via **Settings → Import Course Mapper** in the app
 
 ## How to use
 
-1. Open the live tool at the link above
-2. Search for your course or navigate the map manually
-3. Work through holes 1–18, placing markers for each feature
-4. When done, tap Export JSON and save the file
-5. In the app, go to Settings → Import Course from File and select the exported JSON
+1. Open `course-mapper.html` in a desktop browser (Chrome or Safari recommended)
+2. Navigate the map to your course — use zoom 17–18 for hole detail
+3. Work through holes 1–18, placing TEE and GREEN markers, setting par and stroke index
+4. Optionally add tees with Course/Slope Ratings via the Tees panel
+5. Export → Download JSON File
+6. In the app: **Settings → Import Course Mapper** and select the file
 
-No account, login, or installation required — runs entirely in the browser.
+## Compatible apps
+
+- **EzyGolfer Pro** (iOS) — Settings → Import Course Mapper
+- **MatchPlayGolf** (Android) — Settings → Import Course Mapper
