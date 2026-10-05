@@ -383,6 +383,12 @@
       <div class="info-panel">
         <h3>Green F / C / B</h3>
         <div style="display:flex;align-items:center;gap:4px;margin-bottom:5px;">
+          <span style="color:#fbbf24;font-size:10px;font-weight:bold;width:28px;">CENTRE</span>
+          <span id="greenCentreCoords" style="color:#94a3b8;font-size:9px;flex:1;">Not set</span>
+          <button id="greenCentreBtn" style="background:#fbbf24;color:#0f172a;border:none;border-radius:3px;padding:2px 6px;font-size:9px;font-weight:bold;cursor:pointer;" onclick="toggleGreenCentreMode()">Set</button>
+          <button style="background:#475569;color:white;border:none;border-radius:3px;padding:2px 6px;font-size:9px;cursor:pointer;" onclick="clearGreenCentre()">✕</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;margin-bottom:5px;">
           <span style="color:#4ade80;font-size:10px;font-weight:bold;width:28px;">FRONT</span>
           <span id="greenFrontCoords" style="color:#94a3b8;font-size:9px;flex:1;">Not set</span>
           <button id="greenFrontBtn" style="background:#4ade80;color:#0f172a;border:none;border-radius:3px;padding:2px 6px;font-size:9px;font-weight:bold;cursor:pointer;" onclick="toggleGreenFrontMode()">Set</button>
@@ -500,7 +506,7 @@
     for (let i = 1; i <= 18; i++) {
       courseData.holes.push({ number: i, par: 4, strokeIndex: i, tee: null, green: null, greenFront: null, greenBack: null, driverLanding: null, hazards: [] });
     }
-    let map, currentHole = 1, hazardMode = null, dlMode = false, greenFrontMode = false, greenBackMode = false;
+    let map, currentHole = 1, hazardMode = null, dlMode = false, greenFrontMode = false, greenBackMode = false, greenCentreMode = false;
     let teeMarker = null, greenMarker = null, greenFrontMarker = null, greenBackMarker = null, dlMarker = null, distanceLine = null, hazardMarkers = [];
     let currentRotation = 0;
     const DEFAULT_CENTER = { lat: -8.367, lng: 116.107 };
@@ -706,7 +712,8 @@
       else if (greenBackMarker) { map.removeLayer(greenBackMarker); greenBackMarker = null; }
       if (hole.driverLanding) createDLMarker(hole.driverLanding.lat, hole.driverLanding.lng);
       else if (dlMarker) { map.removeLayer(dlMarker); dlMarker = null; }
-      greenFrontMode = false; greenBackMode = false;
+      greenFrontMode = false; greenBackMode = false; greenCentreMode = false;
+      document.getElementById('greenCentreBtn').style.background = '#fbbf24';
       document.getElementById('greenFrontBtn').style.background = '#4ade80';
       document.getElementById('greenBackBtn').style.background = '#f87171';
       dlMode = false;
@@ -758,7 +765,12 @@
       div.textContent = 'C';
       const icon = L.divIcon({ className: 'custom-marker', html: div.outerHTML, iconSize: [32, 32], iconAnchor: [16, 16] });
       greenMarker = L.marker([lat, lng], { icon, draggable: true }).addTo(map);
-      greenMarker.on('drag', () => { updateDistanceLine(); updateDisplay(); });
+      greenMarker.on('drag', () => {
+        const p = greenMarker.getLatLng();
+        courseData.holes[currentHole - 1].green = { lat: p.lat, lng: p.lng };
+        updateDistanceLine(); updateDisplay(); updateGreenFCBDisplay();
+      });
+      updateGreenFCBDisplay();
     }
 
     function createGreenFrontMarker(lat, lng) {
@@ -791,19 +803,38 @@
       updateGreenFCBDisplay();
     }
 
+    function toggleGreenCentreMode() {
+      greenCentreMode = !greenCentreMode;
+      greenFrontMode = false; greenBackMode = false;
+      document.getElementById('greenCentreBtn').style.background = greenCentreMode ? '#d97706' : '#fbbf24';
+      document.getElementById('greenFrontBtn').style.background = '#4ade80';
+      document.getElementById('greenBackBtn').style.background = '#f87171';
+      setStatus(greenCentreMode ? 'Tap map to place Centre of green' : 'Centre mode off');
+    }
+
+    function clearGreenCentre() {
+      const t = courseData.holes[currentHole - 1].tee || { lat: DEFAULT_CENTER.lat, lng: DEFAULT_CENTER.lng };
+      if (greenMarker) { map.removeLayer(greenMarker); greenMarker = null; }
+      createGreenMarker(t.lat + 0.003, t.lng - 0.002);
+      courseData.holes[currentHole - 1].green = null;
+      updateGreenFCBDisplay(); updateDistanceLine();
+    }
+
     function toggleGreenFrontMode() {
       greenFrontMode = !greenFrontMode;
-      greenBackMode = false;
+      greenBackMode = false; greenCentreMode = false;
       document.getElementById('greenFrontBtn').style.background = greenFrontMode ? '#16a34a' : '#4ade80';
       document.getElementById('greenBackBtn').style.background = '#f87171';
+      document.getElementById('greenCentreBtn').style.background = '#fbbf24';
       setStatus(greenFrontMode ? 'Tap map to place Front of green' : 'Front mode off');
     }
 
     function toggleGreenBackMode() {
       greenBackMode = !greenBackMode;
-      greenFrontMode = false;
+      greenFrontMode = false; greenCentreMode = false;
       document.getElementById('greenBackBtn').style.background = greenBackMode ? '#b91c1c' : '#f87171';
       document.getElementById('greenFrontBtn').style.background = '#4ade80';
+      document.getElementById('greenCentreBtn').style.background = '#fbbf24';
       setStatus(greenBackMode ? 'Tap map to place Back of green' : 'Back mode off');
     }
 
@@ -822,6 +853,8 @@
     function updateGreenFCBDisplay() {
       const hole = courseData.holes[currentHole - 1];
       const fmt = (p) => p ? p.lat.toFixed(5) + ', ' + p.lng.toFixed(5) : 'Not set';
+      const cPos = greenMarker ? greenMarker.getLatLng() : null;
+      document.getElementById('greenCentreCoords').textContent = cPos ? cPos.lat.toFixed(5) + ', ' + cPos.lng.toFixed(5) : 'Not set';
       document.getElementById('greenFrontCoords').textContent = fmt(hole.greenFront);
       document.getElementById('greenBackCoords').textContent = fmt(hole.greenBack);
     }
@@ -917,6 +950,16 @@
     }
 
     function handleMapClick(e) {
+      if (greenCentreMode) {
+        if (greenMarker) { map.removeLayer(greenMarker); greenMarker = null; }
+        createGreenMarker(e.latlng.lat, e.latlng.lng);
+        courseData.holes[currentHole - 1].green = { lat: e.latlng.lat, lng: e.latlng.lng };
+        greenCentreMode = false;
+        document.getElementById('greenCentreBtn').style.background = '#fbbf24';
+        updateDistanceLine(); updateDisplay();
+        setStatus('Centre of green placed — drag to adjust');
+        return;
+      }
       if (greenFrontMode) {
         createGreenFrontMarker(e.latlng.lat, e.latlng.lng);
         courseData.holes[currentHole - 1].greenFront = { lat: e.latlng.lat, lng: e.latlng.lng };
